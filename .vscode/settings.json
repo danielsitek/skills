@@ -1,0 +1,11 @@
+{
+	"chat.tools.terminal.autoApprove": {
+		"git add": true,
+		"git commit": true
+	},
+  "github.copilot.chat.commitMessageGeneration.instructions": [
+		{
+			"file": ".github/instructions/git.instructions.md"
+		}
+	]
+}
