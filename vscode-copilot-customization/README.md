@@ -5,5 +5,5 @@ Expert guide for creating GitHub Copilot customization files in VS Code: custom 
 ## Installation
 
 ```bash
-npx skills add danielsitek/skills@latest --skill vscode-copilot-customization
+npx skills@latest add danielsitek/skills/vscode-copilot-customization
 ```
