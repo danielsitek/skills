@@ -555,7 +555,24 @@ See [test templates](./references/test-templates.md) for more patterns.
 /create-hook     → AI generates a hook JSON file
 ```
 
-### Key settings
+### After creating a hook file
+
+**Always run this step automatically** after writing any hook JSON file.
+Use the script at [scripts/ensure-hook-setting.js](./scripts/ensure-hook-setting.js) to verify (and if needed update) `.vscode/settings.json`:
+
+```bash
+node .github/skills/vscode-copilot-customization/scripts/ensure-hook-setting.js
+```
+
+The script:
+- Does **nothing** if `chat.hookFilesLocations` already contains `".github/hooks": true`
+- **Adds** the entry if the key is missing
+- **Merges** the entry if the key exists but is missing `".github/hooks"`
+- Creates `.vscode/settings.json` if the file doesn't exist yet
+
+> Do not tell the user to update `settings.json` manually — run the script instead.
+
+### Key settings (reference)
 
 ```json
 "chat.hookFilesLocations": {
