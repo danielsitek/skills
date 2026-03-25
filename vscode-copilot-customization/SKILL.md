@@ -481,6 +481,23 @@ See [test templates](./references/test-templates.md) for more patterns.
 | `SubagentStart` | When a subagent is created       |
 | `SubagentStop`  | When a subagent completes        |
 
+### File naming convention
+
+**Always follow this convention.** One file = one logical responsibility. Never name files after the project or create generic `copilot.json`.
+
+| File               | Events inside                   | Purpose                                     |
+| ------------------ | ------------------------------- | ------------------------------------------- |
+| `post-tool.json`   | `PostToolUse`                   | Format / lint after every tool call         |
+| `session-end.json` | `Stop`                          | Typecheck / validate at end of session      |
+| `pre-tool.json`    | `PreToolUse`                    | Block dangerous operations before execution |
+| `subagent.json`    | `SubagentStart`, `SubagentStop` | Subagent monitoring                         |
+
+Rules:
+- **Split by responsibility**, not by event count. `PostToolUse` (formatting) and `Stop` (typecheck) serve different purposes → separate files.
+- **Group related events** in one file. `SubagentStart` + `SubagentStop` belong together → one file.
+- **Never merge unrelated events** into one file just to reduce file count.
+- **Always use these exact filenames.** Consistent names let users know what each file does without opening it.
+
 ### Hook file format
 
 ```json
@@ -493,13 +510,6 @@ See [test templates](./references/test-templates.md) for more patterns.
         "windows": "npx prettier --write \"%TOOL_INPUT_FILE_PATH%\"",
         "timeout": 30
       }
-    ],
-    "PreToolUse": [
-      {
-        "type": "command",
-        "command": "./scripts/validate-tool.sh",
-        "timeout": 15
-      }
     ]
   }
 }
@@ -508,7 +518,10 @@ See [test templates](./references/test-templates.md) for more patterns.
 > **Compatibility**: VS Code uses the same hook format as Claude Code and Copilot CLI.
 > Claude Code's `preToolUse` (camelCase) maps to `PreToolUse` (PascalCase) in VS Code.
 
-### Template: auto-formatter hook
+### Template: `post-tool.json` (formatter)
+
+Adapt the command to the project's formatter (Prettier, Biome, ESLint…). Detect from `package.json`
+devDependencies which formatter is in use — do not default to `prettier` if the project uses `biome`.
 
 ```json
 {
@@ -516,8 +529,8 @@ See [test templates](./references/test-templates.md) for more patterns.
     "PostToolUse": [
       {
         "type": "command",
-        "command": "npx prettier --write \"$TOOL_INPUT_FILE_PATH\" 2>/dev/null || true",
-        "windows": "npx prettier --write \"%TOOL_INPUT_FILE_PATH%\" 2>nul",
+        "command": "test -f \"$TOOL_INPUT_FILE_PATH\" && npx prettier --write \"$TOOL_INPUT_FILE_PATH\" 2>/dev/null || true",
+        "windows": "if exist \"%TOOL_INPUT_FILE_PATH%\" npx prettier --write \"%TOOL_INPUT_FILE_PATH%\" 2>nul",
         "timeout": 30
       }
     ]
@@ -525,7 +538,10 @@ See [test templates](./references/test-templates.md) for more patterns.
 }
 ```
 
-### Template: pre-commit validation hook
+### Template: `session-end.json` (typecheck / lint)
+
+Use the package manager detected from the project (`npm`, `bun`, `pnpm`, `yarn`). Detect from
+`package.json` scripts which commands are available (`typecheck`, `lint`, `check`…).
 
 ```json
 {
@@ -533,9 +549,24 @@ See [test templates](./references/test-templates.md) for more patterns.
     "Stop": [
       {
         "type": "command",
-        "command": "npm run lint && npm run typecheck",
-        "windows": "npm run lint && npm run typecheck",
+        "command": "npm run typecheck 2>&1 | tail -30",
         "timeout": 60
+      }
+    ]
+  }
+}
+```
+
+### Template: `pre-tool.json` (policy enforcement)
+
+```json
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "type": "command",
+        "command": "./scripts/validate-tool.sh",
+        "timeout": 15
       }
     ]
   }

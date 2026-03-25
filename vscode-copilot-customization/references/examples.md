@@ -128,7 +128,9 @@ Follow [project standards](../copilot-instructions.md).
 
 ## Use Case: Auto-formatter + Linter Hooks
 
-### `.github/hooks/format-and-lint.json`
+Two separate files — different responsibilities, consistent naming.
+
+### `.github/hooks/post-tool.json`
 
 ```json
 {
@@ -136,16 +138,24 @@ Follow [project standards](../copilot-instructions.md).
     "PostToolUse": [
       {
         "type": "command",
-        "command": "npx prettier --write \"$TOOL_INPUT_FILE_PATH\" 2>/dev/null || true",
-        "windows": "npx prettier --write \"%TOOL_INPUT_FILE_PATH%\" 2>nul",
-        "timeout": 20
+        "command": "test -f \"$TOOL_INPUT_FILE_PATH\" && bunx biome check --write \"$TOOL_INPUT_FILE_PATH\" 2>/dev/null || true",
+        "windows": "if exist \"%TOOL_INPUT_FILE_PATH%\" bunx biome check --write \"%TOOL_INPUT_FILE_PATH%\" 2>nul",
+        "timeout": 30
       }
-    ],
+    ]
+  }
+}
+```
+
+### `.github/hooks/session-end.json`
+
+```json
+{
+  "hooks": {
     "Stop": [
       {
         "type": "command",
-        "command": "npx eslint --fix --quiet . 2>/dev/null || true",
-        "windows": "npx eslint --fix --quiet . 2>nul",
+        "command": "bun run typecheck 2>&1 | tail -30",
         "timeout": 60
       }
     ]
