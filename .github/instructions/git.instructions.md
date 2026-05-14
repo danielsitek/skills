@@ -7,6 +7,7 @@ applyTo: "**/*"
 
 - Always use English for commit messages.
 - Never include "Generated with Claude" (or similar) in commits.
+- Never include "Co-authored-by: Copilot <copilot@github.com>" or similar in commits.
 
 ## Branching and Flow
 
