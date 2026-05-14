@@ -73,13 +73,14 @@ tools:
 
 ## Agent Skills (`SKILL.md`)
 
-| Field             | Type    | Required | Description                                                                                               |
-| ----------------- | ------- | -------- | --------------------------------------------------------------------------------------------------------- |
-| `name`            | string  | Yes      | Skill identifier, used as `/name` slash command                                                           |
-| `description`     | string  | Yes      | What it does AND when to use it. Max 1024 chars. Be specific about trigger contexts.                      |
-| `hint`            | string  | No       | Hint text shown in chat input on invocation                                                               |
-| `showInSlashMenu` | boolean | No       | Show in `/` menu. Default: `true`                                                                         |
-| `manualOnly`      | boolean | No       | If `true`, only invocable via `/name`. Default: `false`. Set to `true` if auto-loading is too aggressive. |
+| Field                      | Type    | Required | Description                                                                                                  |
+| -------------------------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------ |
+| `name`                     | string  | Yes      | Skill identifier, used as `/name` slash command. Must match parent directory name. Max 64 chars.             |
+| `description`              | string  | Yes      | What it does AND when to use it. Max 1024 chars. Be specific about trigger contexts.                         |
+| `argument-hint`            | string  | No       | Hint text shown in chat input on invocation (e.g. `"[file] [options]"`)                                      |
+| `user-invocable`           | boolean | No       | Show in `/` menu. Default: `true`. Set to `false` to hide from menu while still allowing auto-loading.       |
+| `disable-model-invocation` | boolean | No       | If `true`, skill is only invocable via `/name`. Default: `false`. Use when auto-loading is too aggressive.   |
+| `context`                  | string  | No       | `inline` (default) — instructions added to parent context. `fork` — skill runs in a subagent (experimental). |
 
 ---
 
