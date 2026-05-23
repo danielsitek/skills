@@ -1,5 +1,6 @@
 ---
 name: handoff-create
+hint: "[topic or full N]"
 description: >
   Save a task or topic from the current conversation into a numbered handoff
   file under .handoffs/ so it can be picked up later. Use this skill whenever

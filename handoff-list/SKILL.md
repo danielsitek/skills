@@ -23,9 +23,9 @@ handoffs yet and mention they can create one with `handoff-create`. Stop there.
 
 ## Step 2 — Read each handoff's summary
 
-For every file, read the frontmatter (`handoff`, `title`, `created`, `mode`,
-`status`) and the `<handoff-summary>` block. The summary is written to be
-self-contained — that is the part the user wants to see.
+For every file, read the frontmatter (`handoff`, `title`, `created`) and the
+`<handoff-summary>` block. The summary is written to be self-contained — that
+is the part the user wants to see.
 
 ## Step 3 — Present the overview
 

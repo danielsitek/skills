@@ -48,12 +48,6 @@ rm .handoffs/handoff-NNNN.md
 (In some environments deleting a file may prompt for permission — that is
 expected; let the user approve it.)
 
-Numbering increments from the highest file still present, so deleted handoff
-numbers leave a permanent gap — except when the highest-numbered handoff is
-deleted: `handoff-create` will then assign that same number to the next new
-handoff. If gap-free, monotonic numbering matters to the user, mention this so
-it is not a surprise.
-
 ## Step 4 — Confirm
 
 Tell the user the handoff was closed and deleted. Optionally mention how many
