@@ -5,10 +5,11 @@ description: >
   task. Use this skill whenever the user wants to pick up, resume, open, reopen,
   continue, or "invoke" a handoff — phrases like "invoke handoff 3", "open
   handoff-0002", "let's pick up that handoff", "resume the handoff about the API
-  rate limiting", "vyvolej handoff 1", "pokračuj s handoffem". Trigger even if
-  the user only gives a number or a rough topic instead of an exact filename.
-  This skill orients the user on what the handoff contains before any work
-  starts — it does not delete the file.
+  rate limiting", "pokračuj s handoffem". Trigger even if the user only gives a
+  number or a rough topic instead of an exact filename. This skill orients the
+  user on what the handoff contains before any work starts — it does not delete
+  the file.
+hint: "[number or topic]"
 ---
 
 # Handoff: Invoke

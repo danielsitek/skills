@@ -4,9 +4,9 @@ description: >
   List all saved handoff files in .handoffs/ with their summaries so the user
   can see what tasks they have parked. Use this skill whenever the user wants an
   overview of their handoffs — phrases like "list handoffs", "what handoffs do I
-  have", "show my parked tasks", "what did I stash", "jaké mám handoffs", "vypiš
-  handoffy". Trigger whenever the user wants to know what is waiting in the
-  handoff queue, even without the exact word "list".
+  have", "show my parked tasks", "what did I stash", "vypiš handoffy". Trigger
+  whenever the user wants to know what is waiting in the handoff queue, even
+  without the exact word "list".
 ---
 
 # Handoff: List

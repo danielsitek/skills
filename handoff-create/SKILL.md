@@ -5,11 +5,11 @@ description: >
   file under .handoffs/ so it can be picked up later. Use this skill whenever
   the user wants to park, stash, set aside, snapshot, or "hand off" something
   from the conversation for later — phrases like "create a handoff", "save this
-  as a handoff", "park this for later", "stash this task", "vytvoř handoff",
-  "ulož to na později", or just "handoff" while mid-conversation. Trigger even
-  if the user does not say the exact word "handoff" but clearly wants to set a
-  side-topic aside without losing it. Supports two modes: a focused excerpt of
-  the relevant part (default) and a verbatim dump of the last N messages.
+  as a handoff", "park this for later", "stash this task", "ulož to na pozdéji",
+  or just "handoff" while mid-conversation. Trigger even if the user does not
+  say the exact word "handoff" but clearly wants to set a side-topic aside
+  without losing it. Supports two modes: a focused excerpt of the relevant part
+  (default) and a verbatim dump of the last N messages.
 ---
 
 # Handoff: Create
@@ -48,17 +48,13 @@ part should I save into the handoff?" — then proceed. Don't over-ask.
 
 ## Step 2 — Compute the next number
 
-Numbers auto-increment from the highest existing file, so closed/deleted
-handoffs never get their number reused. From the project root:
+List `.handoffs/` to find the highest existing `handoff-NNNN` number, add 1,
+and zero-pad to 4 digits. An empty or missing directory starts at `handoff-0001.md`.
 
-```bash
-mkdir -p .handoffs
-last=$(ls .handoffs/ 2>/dev/null | grep -oE 'handoff-[0-9]+' | grep -oE '[0-9]+' | sort -n | tail -1)
-printf "handoff-%04d.md\n" $(( 10#${last:-0} + 1 ))
-```
+Use `mkdir -p .handoffs` to create the directory if needed.
 
-(`10#` forces base-10 so leading zeros are not read as octal.) An empty or
-missing `.handoffs/` directory yields `handoff-0001.md`.
+> If computing via shell: use `10#${n}` in bash arithmetic (`$(( 10#${n} + 1 ))`)
+> to avoid octal parsing errors on numbers with leading zeros like `08`, `09`.
 
 ## Step 3 — Write the file
 
