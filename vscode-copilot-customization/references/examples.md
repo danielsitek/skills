@@ -175,7 +175,7 @@ name: "db-migration"
 description: >
   Guide for creating Prisma database migrations. Use when asked to add models,
   change schema, create migrations, or update the database structure.
-hint: "[migration description]"
+argument-hint: "[migration description]"
 ---
 # Database Migrations (Prisma)
 

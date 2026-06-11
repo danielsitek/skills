@@ -12,6 +12,7 @@ Reusable task templates invoked manually with the `/` slash command in chat.
 name: "generate-component"      # Used as /generate-component slash command
 description: "Scaffold a new React component with tests"
 agent: "agent"                  # ask | agent | plan | <custom-agent-name>
+argument-hint: "[component-name]" # Optional – hint shown in chat input on invocation
 model: "claude-sonnet-4-5"      # Optional – overrides model picker
 tools:                          # Available tools for this prompt
   - "search/codebase"

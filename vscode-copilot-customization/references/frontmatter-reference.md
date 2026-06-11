@@ -25,7 +25,7 @@ Complete list of supported YAML frontmatter fields for each customization type.
 | `agent`       | string   | No       | `ask` \| `agent` \| `plan` \| `<custom-agent-name>`. Defaults to current agent; defaults to `agent` if tools are specified. |
 | `model`       | string   | No       | Model to use. Format: `"claude-sonnet-4-5 (copilot)"` or `"GPT-4o (copilot)"`                                               |
 | `tools`       | string[] | No       | Available tools. Unsupported tools are ignored. Use `"<server-name>/*"` for all MCP tools.                                  |
-| `hint`        | string   | No       | Hint text shown in chat input when prompt is invoked                                                                        |
+| `argument-hint` | string | No       | Hint text shown in chat input when prompt is invoked (e.g. `"[entity] [options]"`)                                         |
 
 ### Tool name examples
 
