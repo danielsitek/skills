@@ -17,7 +17,6 @@ tools:                          # Available tools for this prompt
   - "search/codebase"
   - "vscode/askQuestions"
   - "githubRepo"
-mode: "agent"                   # Optional – ask | agent | plan
 ---
 ```
 
