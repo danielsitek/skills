@@ -4,13 +4,16 @@ hint: "[topic or full N]"
 description: >
   Save a task or topic from the current conversation into a numbered handoff
   file under .handoffs/ so it can be picked up later. Use this skill whenever
-  the user wants to park, stash, set aside, snapshot, or "hand off" something
-  from the conversation for later — phrases like "create a handoff", "save this
-  as a handoff", "park this for later", "stash this task", "ulož to na pozdéji",
-  or just "handoff" while mid-conversation. Trigger even if the user does not
-  say the exact word "handoff" but clearly wants to set a side-topic aside
-  without losing it. Supports two modes: a focused excerpt of the relevant part
-  (default) and a verbatim dump of the last N messages.
+  the user **explicitly** asks to park, stash, set aside, snapshot, or "hand off"
+  something from the conversation for later — phrases like "create a handoff",
+  "save this as a handoff", "park this for later", "stash this task",
+  "ulož to na pozdéji", or just "handoff" while mid-conversation.
+  Do NOT trigger based on the content of another agent's output (e.g. a task
+  list, recommendations, or a "Following steps" section). An explicit intent
+  signal from the user is required — the mere presence of future-oriented
+  content in a response is NOT sufficient. Supports two modes: a focused
+  excerpt of the relevant part (default) and a verbatim dump of the last N
+  messages.
 ---
 
 # Handoff: Create
