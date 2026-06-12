@@ -1,5 +1,7 @@
 # Agent Skills
 
+[![skills.sh](https://skills.sh/b/danielsitek/skills)](https://skills.sh/danielsitek/skills)
+
 A personal collection of agent skills.
 
 ## Getting started
@@ -7,7 +9,7 @@ A personal collection of agent skills.
 Install with skills.io:
 
 ```sh
-npx skills add danielsitek/skills -g -y
+npx skills@latest add danielsitek/skills -g -y
 ```
 
 ## License
