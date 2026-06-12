@@ -9,6 +9,8 @@ description: >
   number or a rough topic instead of an exact filename. This skill orients the
   user on what the handoff contains before any work starts — it does not delete
   the file.
+  Also trigger when the user asks whether a parked task is still relevant or
+  up to date.
 argument-hint: "[number or topic]"
 ---
 

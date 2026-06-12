@@ -10,9 +10,7 @@ Outputs a scannable table (or prose for 1–2 handoffs) with number, title, crea
 
 ## Workflow
 
-```
-handoff-create → handoff-list → handoff-invoke → handoff-close
-```
+[handoff-create](../handoff-create/README.md) → [handoff-list](../handoff-list/README.md) → [handoff-invoke](../handoff-invoke/README.md) → [handoff-close](../handoff-close/README.md)
 
 ## Troubleshooting
 

@@ -19,9 +19,7 @@ Invoking a handoff does **not** delete it. Use `handoff-close` when done.
 
 ## Workflow
 
-```
-handoff-create → handoff-list → handoff-invoke → handoff-close
-```
+[handoff-create](../handoff-create/README.md) → [handoff-list](../handoff-list/README.md) → [handoff-invoke](../handoff-invoke/README.md) → [handoff-close](../handoff-close/README.md)
 
 ## Troubleshooting
 

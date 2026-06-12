@@ -10,9 +10,7 @@ You can reference by number or topic. The skill always shows what will be delete
 
 ## Workflow
 
-```
-handoff-create → handoff-list → handoff-invoke → handoff-close
-```
+[handoff-create](../handoff-create/README.md) → [handoff-list](../handoff-list/README.md) → [handoff-invoke](../handoff-invoke/README.md) → [handoff-close](../handoff-close/README.md)
 
 ## Troubleshooting
 

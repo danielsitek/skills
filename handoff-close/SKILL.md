@@ -6,7 +6,7 @@ description: >
   — phrases like "close handoff 2", "handoff 3 is done", "remove that handoff",
   "delete handoff-0001", "ten handoff je hotový". Trigger when the user signals
   a handoff is finished and should be removed. This skill deletes a file, so it
-  always confirms first.
+  confirms before deleting unless the user gave an unambiguous numbered instruction.
 argument-hint: "[number or topic]"
 ---
 
@@ -46,6 +46,8 @@ Remove the file:
 ```bash
 rm .handoffs/handoff-NNNN.md
 ```
+
+(On Windows: `Remove-Item .handoffs\handoff-NNNN.md`)
 
 (In some environments deleting a file may prompt for permission — that is
 expected; let the user approve it.)

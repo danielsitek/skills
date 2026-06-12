@@ -27,11 +27,16 @@ For every file, read the frontmatter (`handoff`, `title`, `created`) and the
 `<handoff-summary>` block. The summary is written to be self-contained — that
 is the part the user wants to see.
 
+If a file's frontmatter or summary cannot be parsed, mark it with `⚠ malformed`
+and continue listing the rest.
+
 ## Step 3 — Present the overview
 
 Show the handoffs ordered by number. For each one, give the number, title,
 created date, and the summary in the user's own language if they are not
-writing in English. A compact table works well when there are several:
+writing in English. (Handoff files are stored in English; translate summaries
+into the user's language for display only.) A compact table works well when
+there are several:
 
 | #    | Title                         | Created    | Summary                          |
 |------|-------------------------------|------------|----------------------------------|

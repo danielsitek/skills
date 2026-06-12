@@ -4,7 +4,7 @@ argument-hint: "[topic or full N]"
 description: >
   Save a task or topic from the current conversation into a numbered handoff
   file under .handoffs/ so it can be picked up later. Use this skill whenever
-  the user **explicitly** asks to park, stash, set aside, snapshot, or "hand off"
+  the user explicitly asks to park, stash, set aside, snapshot, or "hand off"
   something from the conversation for later — phrases like "create a handoff",
   "save this as a handoff", "park this for later", "stash this task",
   "ulož to na pozdéji", or just "handoff" while mid-conversation.
@@ -57,8 +57,9 @@ and zero-pad to 4 digits. An empty or missing directory starts at `handoff-0001.
 
 Use `mkdir -p .handoffs` to create the directory if needed.
 
-> If computing via shell: use `10#${n}` in bash arithmetic (`$(( 10#${n} + 1 ))`)
+> If computing via shell **in bash**: use `10#${n}` in arithmetic (`$(( 10#${n} + 1 ))`)
 > to avoid octal parsing errors on numbers with leading zeros like `08`, `09`.
+> In zsh and most other environments this is not needed.
 
 ## Step 3 — Write the file
 
@@ -75,6 +76,8 @@ title: <short descriptive title, ~3-8 words>
 created: <YYYY-MM-DD>
 mode: relevant
 status: open
+# Note: status is always "open" in a live file.
+# A handoff is "closed" by deleting the file with handoff-close — there is no "closed" state.
 ---
 
 <handoff-summary>
@@ -103,8 +106,9 @@ done when this handoff is resumed. Write it as a brief, not as a vague note.
   (`**User:**` / `**Assistant:**`), trimming only obvious noise.
 ```
 
-Set `mode:` to whichever mode was used. Keep `status: open` — `handoff-close`
-flips a handoff out of existence by deleting the file.
+Set `mode:` to whichever mode was used. The `status` field is always `open` in
+any live file — closing a handoff means deleting it with `handoff-close`, not
+flipping a status value.
 
 ## Step 4 — Confirm briefly
 
