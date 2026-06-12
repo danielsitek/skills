@@ -7,7 +7,7 @@ description: >
   "delete handoff-0001", "ten handoff je hotový". Trigger when the user signals
   a handoff is finished and should be removed. This skill deletes a file, so it
   always confirms first.
-hint: "[number or topic]"
+argument-hint: "[number or topic]"
 ---
 
 # Handoff: Close
@@ -19,10 +19,12 @@ Because this permanently removes a file, always confirm before deleting.
 
 ## Step 1 — Resolve which handoff
 
+- If `.handoffs/` does not exist or is empty, tell the user there are no saved
+  handoffs to close and stop.
 - If the user gave a number, target `.handoffs/handoff-NNNN.md` (zero-pad it).
 - If they referred to a topic instead, match it against the `title` and
   `<handoff-summary>` of the files; if ambiguous, ask which one.
-- If the file does not exist, say so and list the handoffs that do exist.
+- If the specific file does not exist, say so and list the handoffs that do exist.
 
 ## Step 2 — Show what will be closed and confirm
 

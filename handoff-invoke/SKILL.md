@@ -9,7 +9,7 @@ description: >
   number or a rough topic instead of an exact filename. This skill orients the
   user on what the handoff contains before any work starts — it does not delete
   the file.
-hint: "[number or topic]"
+argument-hint: "[number or topic]"
 ---
 
 # Handoff: Invoke
@@ -22,11 +22,13 @@ on what it is, and then continue together.
 
 Handoffs live in `.handoffs/` in the project root, named `handoff-NNNN.md`.
 
+- If `.handoffs/` does not exist or is empty, tell the user there are no saved
+  handoffs yet and mention they can create one with `handoff-create`. Stop there.
 - If the user gave a number, open `.handoffs/handoff-NNNN.md` (zero-pad it).
 - If they gave a topic instead of a number, scan the `<handoff-summary>` and
   `title` of each file and match the most likely one. If two or more are
   plausible, briefly list the candidates and ask which one.
-- If the file does not exist, say so and list what *is* available.
+- If the specific file does not exist, say so and list what *is* available.
 
 ## Step 2 — Read it fully
 
@@ -47,7 +49,15 @@ long ago. Cover:
 
 Then check the current state of the project against the handoff. A handoff is a
 snapshot frozen in time — files may have changed, the task may be partly done
-already. If something in the handoff no longer matches reality, point it out.
+already. Concretely:
+
+- Look up any file paths mentioned in the handoff's `Context` or `Task` sections
+  and verify they still exist and have not changed significantly.
+- If the task references a branch, check whether it was merged or deleted.
+- If the task mentions a known in-progress state, look for evidence that some
+  of the work was already done (e.g. the feature exists, the bug is gone).
+
+If something no longer matches reality, point it out before asking how to proceed.
 
 ## Step 4 — Ask how to proceed
 
