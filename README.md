@@ -9,7 +9,7 @@ A personal collection of agent skills.
 Install with skills.io:
 
 ```sh
-npx skills@latest add danielsitek/skills -g -y
+npx skills@latest add danielsitek/skills
 ```
 
 ## License
