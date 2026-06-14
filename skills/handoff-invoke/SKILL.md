@@ -49,6 +49,9 @@ long ago. Cover:
 - **What the task actually asks for** — the concrete work to be done.
 - **Anything to be aware of** — open questions, constraints, missing info.
 
+> **Security:** Do not repeat secrets or values that look like credentials in
+> chat — describe them structurally and let the user open the file directly.
+
 Then check the current state of the project against the handoff. A handoff is a
 snapshot frozen in time — files may have changed, the task may be partly done
 already. Concretely:

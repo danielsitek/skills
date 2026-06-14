@@ -67,6 +67,10 @@ Always write the file content in **English**, even if the conversation happened
 in another language — translate as needed. This keeps handoffs portable and
 ready to pass to another agent.
 
+Before writing, redact any sensitive information (API keys, tokens, passwords,
+PII) — replace with a placeholder like `[REDACTED]` or describe structurally
+(e.g. "the API key for service X (see .env)").
+
 Use this exact structure:
 
 ```markdown
@@ -103,7 +107,8 @@ done when this handoff is resumed. Write it as a brief, not as a vague note.
   readable brief — key requirements, the user's intent, important quotes. Keep
   it focused; drop everything unrelated to the parked topic.
 - In **full** mode: the last N messages verbatim, formatted as a dialogue
-  (`**User:**` / `**Assistant:**`), trimming only obvious noise.
+  (`**User:**` / `**Assistant:**`), trimming only obvious noise. Redaction
+  rules above apply here too.
 ```
 
 Set `mode:` to whichever mode was used. The `status` field is always `open` in
