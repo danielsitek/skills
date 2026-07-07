@@ -83,6 +83,17 @@ glab mr merge 42 --remove-source-branch --yes
 > glab waits for checks to pass before merging. Pass `--auto-merge=false` to
 > merge immediately regardless of pipeline state.
 
+> **Note:** `--squash` has **no local default** — unlike `--auto-merge`, glab
+> only sends a squash value when you pass the flag. Omitting it hands the
+> decision to the GitLab project's "Squash commits when merging" setting, so
+> be explicit when the outcome matters:
+>
+> | Flag | Result |
+> |---|---|
+> | *(omitted)* | GitLab project setting decides |
+> | `--squash` | force squash |
+> | `--squash=false` | force no-squash |
+
 ---
 
 ## Common MR Operations
