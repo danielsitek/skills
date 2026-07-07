@@ -5,7 +5,6 @@ description: >
   creating a merge request, accepting or merging an MR, triggering or
   tracing CI pipelines, managing pipeline schedules, or handling interactive
   prompts glab raises at runtime. All patterns are non-interactive.
-argument-hint: "[command: mr-create | mr-accept | ci-ops | schedule]"
 ---
 
 # glab CLI — Agent Guide
@@ -103,6 +102,11 @@ glab mr approve 42
 glab mr update 42 --title "fix: corrected title"
 glab mr update 42 --label "reviewed" --unlabel "wip"
 
+# Update description — multiline works via normal bash quoting
+glab mr update 42 --description "Full multiline
+description here."
+# ⚠ Never pass --description "-": it opens an editor and stalls the agent.
+
 # Mark as ready (remove draft)
 glab mr update 42 --ready
 
@@ -145,7 +149,8 @@ glab ci lint
 # List all schedules — note the numeric IDs, required for all other commands
 glab schedule list
 
-# Create a schedule (--cron, --description, --ref required; timezone defaults to UTC)
+# Create a schedule (--cron, --description, --ref required; timezone defaults to UTC).
+# --variable sets pipeline (CI/CD) variables passed to the run — not shell env vars.
 glab schedule create \
   --description "Nightly scan" \
   --cron "0 2 * * *" \
@@ -181,30 +186,32 @@ glab schedule list -R owner/repo
 ## Handling Interactive Prompts
 
 Even with `--yes`, glab occasionally prompts (e.g. target branch selection
-when the remote has no default). Handle each prompt with `send_to_terminal`,
-one answer per call — never batch multiple answers.
+when the remote has no default). **The fix is prevention, not answering
+prompts** — the agent should never end up at a live glab prompt.
 
-**Preferred prevention**: set `GLAB_NO_PROMPT=1` before the command:
+**Prevention (do this every time):** set `GLAB_NO_PROMPT=1` and pass every
+required value as a flag. This suppresses all prompts globally, so the command
+either succeeds or fails fast instead of blocking.
 
 ```bash
-GLAB_NO_PROMPT=1 glab mr create --title "..." --description "..." --yes
+GLAB_NO_PROMPT=1 glab mr create \
+  --title "..." --description "..." --target-branch main --yes
 ```
 
-**Fallback — answering prompts in real time:**
+If a command still stalls, it means a required value was missing — read the
+error/prompt text, re-run with the corresponding flag added. The common
+culprits and the flag that removes each prompt:
 
-1. Run the command with `mode=async` (or with a `timeout` so it can stall).
-2. Observe the prompt in terminal output.
-3. Send the answer: `send_to_terminal({ id, command: "answer", waitForOutput: true })`.
-4. Repeat until glab exits.
-
-Common interactive questions and expected answers:
-
-| Prompt | Typical answer |
+| Prompt you see | Missing flag to add |
 |---|---|
-| `Target branch [main]:` | press Enter or type branch name |
-| `Title:` | type the MR title |
-| `Description (optional):` | type text or press Enter to skip |
-| `Submit?` | `y` |
+| `Target branch [main]:` | `--target-branch main` |
+| `Title:` | `--title "..."` |
+| `Description (optional):` | `--description "..."` |
+| editor opens (`vi`/`nano`) | `--no-editor` (and pass `--description`) |
 
-If the prompt opens an editor (`vi`, `nano`), send `:q!` (vim) or `Ctrl-X`
-(nano) to abort, then re-run with `--description "..."` and `--no-editor`.
+**Last resort — answering a live prompt.** Only if prevention is somehow
+impossible: run the command as a background/non-blocking process, read its
+output to see the prompt, then write the single answer to that same process's
+stdin — one answer per prompt, waiting for the next prompt before sending the
+next answer. Use whatever background-process + stdin mechanism your harness
+provides; there is no glab-specific API for this.
