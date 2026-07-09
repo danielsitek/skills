@@ -11,6 +11,7 @@ applyTo: "**/*"
     - "Generated with Claude"
     - "Co-authored-by: Copilot <copilot@github.com>"
     - "Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+    - "Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 
 ## Branching and Flow
 
