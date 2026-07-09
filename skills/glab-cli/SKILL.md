@@ -13,6 +13,12 @@ The central virtue is **non-interactive**: always pass all required values as
 flags so glab never prompts. The nuclear option: set `GLAB_NO_PROMPT=1` in the
 environment to suppress every prompt globally.
 
+The same virtue applies to **reading**: several read commands default to an
+interactive/live view or open a pager, which stalls an agent. For any command
+that reports state (`ci status`, `ci list`, `mr view`, `mr list`), request
+machine output with `-F json` and filter with `--jq` — this never pages and is
+directly parseable. Avoid the bare interactive forms.
+
 ---
 
 ## Creating a Merge Request
@@ -83,6 +89,17 @@ glab mr merge 42 --remove-source-branch --yes
 > glab waits for checks to pass before merging. Pass `--auto-merge=false` to
 > merge immediately regardless of pipeline state.
 
+> **Waiting for a pipeline before merge? Don't poll.** Never `sleep` + poll
+> `ci status` — foreground `sleep` is blocked in agent harnesses, and it is
+> redundant: `glab mr merge <id> --yes` *is* the wait. With auto-merge it
+> blocks until the pipeline passes, then merges — and merges nothing if the
+> pipeline fails. So "create → wait for pipeline → approve → merge" collapses to:
+>
+> ```bash
+> glab mr approve 42
+> glab mr merge 42 --yes --remove-source-branch
+> ```
+
 > **Note:** `--squash` has **no local default** — unlike `--auto-merge`, glab
 > only sends a squash value when you pass the flag. Omitting it hands the
 > decision to the GitLab project's "Squash commits when merging" setting, so
@@ -130,11 +147,15 @@ glab mr close 42
 ## CI Pipeline Operations
 
 ```bash
-# View pipeline status for current branch
-glab ci status
+# Pipeline status for current branch — JSON is the only agent-safe form.
+# ⚠ Bare `glab ci status` runs a live/interactive view; `--compact` is a human
+#   view that can still invoke the pager. In an agent, always use -F json.
+glab ci status -F json --jq '.status'   # scriptable: one status string
 
-# List recent pipelines
-glab ci list
+# List recent pipelines (latest first). `ci list` has no --branch filter;
+# use --scope to narrow. Request JSON to avoid the pager.
+glab ci list -F json --jq '.[0].status'   # status of the most recent pipeline
+glab ci list --scope running
 
 # Stream a job log in real time (blocks until job finishes)
 glab ci trace <job-name>
@@ -226,3 +247,13 @@ output to see the prompt, then write the single answer to that same process's
 stdin — one answer per prompt, waiting for the next prompt before sending the
 next answer. Use whatever background-process + stdin mechanism your harness
 provides; there is no glab-specific API for this.
+
+## Self-Review
+
+After finishing, scan the session for glab commands that misbehaved — needed a
+retry or extra flag, hit a prompt / pager / interactive view, blocked, errored,
+or acted differently than described here. If none did, skip this step.
+
+Otherwise write a few lines: **Worked** (first try), **Didn't** (+ root cause),
+**Fix** (one concrete change — name the section, command, or flag). Propose the
+`SKILL.md` edit; don't apply it silently.
