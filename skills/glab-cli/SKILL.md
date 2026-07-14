@@ -89,6 +89,11 @@ glab mr merge 42 --remove-source-branch --yes
 > glab waits for checks to pass before merging. Pass `--auto-merge=false` to
 > merge immediately regardless of pipeline state.
 
+> **Race condition:** a just-created pipeline can lag in GitLab's bookkeeping,
+> so `glab mr merge --yes` may print `No pipeline running on <branch>` and
+> merge immediately without waiting. Before merging, confirm the pipeline is
+> actually registered: `glab ci list -F json --jq '.[0].status'`.
+
 > **Waiting for a pipeline before merge? Don't poll.** Never `sleep` + poll
 > `ci status` — foreground `sleep` is blocked in agent harnesses, and it is
 > redundant: `glab mr merge <id> --yes` *is* the wait. With auto-merge it
@@ -173,6 +178,9 @@ glab ci run
 glab ci lint
 ```
 
+> **`glab api` has no `--jq` flag** (unlike `mr view`/`ci status`/`ci list`) —
+> pipe its output to `jq` instead: `glab api projects/:id/pipelines/:id | jq -r '.status'`.
+
 ---
 
 ## Schedule Operations
@@ -248,12 +256,15 @@ stdin — one answer per prompt, waiting for the next prompt before sending the
 next answer. Use whatever background-process + stdin mechanism your harness
 provides; there is no glab-specific API for this.
 
-## Self-Review
+## Self-Review — mandatory, run unprompted
 
-After finishing, scan the session for glab commands that misbehaved — needed a
-retry or extra flag, hit a prompt / pager / interactive view, blocked, errored,
-or acted differently than described here. If none did, skip this step.
+The moment a `glab` command misbehaves — needed a retry or extra flag, hit a
+prompt / pager / interactive view, blocked, errored, or acted differently than
+documented here — treat that as part of the task, not a footnote. Do not wait
+for the user to ask "how did the skill go?".
 
-Otherwise write a few lines: **Worked** (first try), **Didn't** (+ root cause),
-**Fix** (one concrete change — name the section, command, or flag). Propose the
-`SKILL.md` edit; don't apply it silently.
+Before reporting the task done, do this yourself, once, without being asked:
+if nothing misbehaved, skip silently. Otherwise write a few lines: **Worked**
+(first try), **Didn't** (+ root cause), **Fix** (one concrete change — name
+the section, command, or flag) — then propose the `SKILL.md` edit as part of
+your normal task wrap-up. Don't apply it silently.
