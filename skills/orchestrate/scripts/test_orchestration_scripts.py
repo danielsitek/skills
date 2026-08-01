@@ -152,6 +152,48 @@ class ReviewWrapperTests(unittest.TestCase):
         self.assertNotIn('"type": "assistant"', result.stdout)
         self.assertNotIn("verbose hidden reasoning", result.stdout)
 
+    def test_terminates_claude_when_model_policy_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            fake_claude = root / "claude"
+            fake_claude.write_text(
+                "#!/usr/bin/env python3\n"
+                "import json, time\n"
+                f"print(json.dumps({init()!r}), flush=True)\n"
+                f"print(json.dumps({tool('Read', model='claude-sonnet-5')!r}), flush=True)\n"
+                "time.sleep(10)\n",
+                encoding="utf-8",
+            )
+            fake_claude.chmod(0o755)
+            subprocess.run(
+                ["git", "init", "-q", "-b", "feature/review", str(root)], check=True
+            )
+            prompt = "\n".join(
+                [
+                    "Mode: REVIEW",
+                    "Source precedence: supervisor, repository",
+                    "Goal: Review the feature diff for correctness and regressions.",
+                    "Acceptance matrix: Verify happy, negative, and invariant cases.",
+                    "Runnable checks: bun test and git diff --check.",
+                    "Report back: Findings by severity and exact check results.",
+                    "Inspect only; do not modify files. " * 5,
+                ]
+            )
+            environment = os.environ | {"ORCHESTRATE_CLAUDE_BIN": str(fake_claude)}
+
+            result = subprocess.run(
+                [str(REVIEW), "--workdir", str(root), "--model", "haiku", "--effort", "low"],
+                input=prompt,
+                text=True,
+                capture_output=True,
+                env=environment,
+                timeout=3,
+                check=False,
+            )
+
+        self.assertEqual(result.returncode, 45, result.stdout + result.stderr)
+        self.assertIn("model_mismatch", result.stdout)
+
 
 if __name__ == "__main__":
     unittest.main()

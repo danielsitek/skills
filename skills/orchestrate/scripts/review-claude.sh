@@ -68,7 +68,7 @@ case "$effort" in
     ;;
 esac
 
-for command_name in git python3; do
+for command_name in git mkfifo python3; do
   if ! command -v "$command_name" >/dev/null 2>&1; then
     printf 'Required command is unavailable: %s\n' "$command_name" >&2
     exit 2
@@ -113,9 +113,17 @@ for marker in "${required_prompt_markers[@]}"; do
   fi
 done
 
-stream_log=$(mktemp "${TMPDIR:-/tmp}/orchestrate-claude-review.XXXXXX")
+run_dir=$(mktemp -d "${TMPDIR:-/tmp}/orchestrate-claude-review.XXXXXX")
+stream_log="$run_dir/stream.jsonl"
+stream_pipe="$run_dir/stream.pipe"
+mkfifo "$stream_pipe"
+claude_pid=''
 cleanup() {
-  rm -f "$stream_log"
+  if [[ -n "$claude_pid" ]] && kill -0 "$claude_pid" 2>/dev/null; then
+    kill "$claude_pid" 2>/dev/null || true
+  fi
+  rm -f "$stream_log" "$stream_pipe"
+  rmdir "$run_dir" 2>/dev/null || true
 }
 trap cleanup EXIT
 
@@ -134,15 +142,22 @@ if ((enforce_model)); then
   filter_args+=(--enforce-model)
 fi
 
-set +e
 (
   cd "$workdir" || exit 2
-  "$claude_bin" "${claude_args[@]}"
-) | python3 "$script_dir/filter-claude-stream.py" "${filter_args[@]}"
-pipeline_status=("${PIPESTATUS[@]}")
-claude_status=${pipeline_status[0]}
-filter_status=${pipeline_status[1]}
+  exec "$claude_bin" "${claude_args[@]}"
+) >"$stream_pipe" &
+claude_pid=$!
+
+set +e
+python3 "$script_dir/filter-claude-stream.py" "${filter_args[@]}" <"$stream_pipe"
+filter_status=$?
+if ((filter_status != 0)) && kill -0 "$claude_pid" 2>/dev/null; then
+  kill "$claude_pid" 2>/dev/null || true
+fi
+wait "$claude_pid"
+claude_status=$?
 set -e
+claude_pid=''
 
 if ((filter_status != 0)); then
   printf 'Claude review policy stopped the run with exit code %s\n' "$filter_status" >&2
