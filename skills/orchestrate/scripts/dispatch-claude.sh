@@ -4,9 +4,16 @@ set -euo pipefail
 
 usage() {
   printf '%s\n' \
-    'Usage: dispatch-claude.sh --workdir PATH --model MODEL --effort LEVEL [--allowed-tools TOOLS] [--continue | --resume SESSION_ID]' \
+    'Usage: dispatch-claude.sh --workdir PATH --model MODEL --effort LEVEL [OPTIONS]' \
     '' \
-    'Reads the implementation prompt from stdin and streams Claude Code JSON.'
+    'Reads an implementation prompt from stdin and emits a filtered Claude Code stream.' \
+    '' \
+    'Options:' \
+    '  --allowed-tools TOOLS' \
+    '  --max-exploration-before-edit N  Default: 5' \
+    '  --require-first-tool TOOL' \
+    '  --allow-model-switch' \
+    '  --continue | --resume SESSION_ID'
 }
 
 workdir=''
@@ -18,6 +25,9 @@ claude_bin=${ORCHESTRATE_CLAUDE_BIN:-claude}
 continuation=''
 resume_session=''
 continuation_count=0
+max_exploration_before_edit=5
+require_first_tool=''
+enforce_model=1
 
 while (($# > 0)); do
   case "$1" in
@@ -36,6 +46,18 @@ while (($# > 0)); do
     --allowed-tools)
       allowed_tools=${2-}
       shift 2
+      ;;
+    --max-exploration-before-edit)
+      max_exploration_before_edit=${2-}
+      shift 2
+      ;;
+    --require-first-tool)
+      require_first_tool=${2-}
+      shift 2
+      ;;
+    --allow-model-switch)
+      enforce_model=0
+      shift
       ;;
     --continue)
       continuation='continue'
@@ -72,6 +94,11 @@ fi
 
 if [[ -z "$workdir" || -z "$model" || -z "$effort" ]]; then
   usage >&2
+  exit 2
+fi
+
+if [[ ! "$max_exploration_before_edit" =~ ^[0-9]+$ ]]; then
+  printf '%s\n' '--max-exploration-before-edit must be a non-negative integer' >&2
   exit 2
 fi
 
@@ -180,18 +207,26 @@ claude_args+=(
   "$prompt"
 )
 
+filter_args=("$stream_log" --max-exploration-before-edit "$max_exploration_before_edit")
+if [[ -n "$require_first_tool" ]]; then
+  filter_args+=(--require-first-tool "$require_first_tool")
+fi
+if ((enforce_model)); then
+  filter_args+=(--enforce-model)
+fi
+
 set +e
 (
   cd "$workdir" || exit 2
   "$claude_bin" "${claude_args[@]}"
-) | python3 "$script_dir/filter-claude-stream.py" "$stream_log"
+) | python3 "$script_dir/filter-claude-stream.py" "${filter_args[@]}"
 pipeline_status=("${PIPESTATUS[@]}")
 claude_status=${pipeline_status[0]}
 filter_status=${pipeline_status[1]}
 set -e
 
 if ((filter_status != 0)); then
-  printf 'Claude stream filter failed with exit code %s\n' "$filter_status" >&2
+  printf 'Claude dispatch policy stopped the run with exit code %s\n' "$filter_status" >&2
   exit "$filter_status"
 fi
 
