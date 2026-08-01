@@ -3,6 +3,15 @@
 Disclosed reference for [orchestrate](../SKILL.md). How to actually dispatch
 an executor once a feature is routed.
 
+## Contents
+
+- [Provider inventory and budget](#provider-inventory-and-budget)
+- [Capability ladder](#capability-ladder)
+- [Claude Code subagents](#claude-code-subagents)
+- [CLI executors](#cli-executors)
+- [Progress and stop gates](#progress-and-stop-gates)
+- [Delegation prompt templates](#delegation-prompt-templates)
+
 ## Provider inventory and budget
 
 When cost or limits motivate delegation, inspect the real local pool before
@@ -116,6 +125,31 @@ printf '%s' "<prompt>" | <skill-dir>/scripts/dispatch-claude.sh \
   --workdir <feature-checkout> --model haiku --effort low
 ```
 
+The wrapper allows five total `Read`/`Glob`/`Grep` calls before the first
+`Edit` or `Write`, filters the stream, rejects commits and no-diff success, and
+verifies that runtime usage stays on the model initialized by Claude Code.
+For a repair that already has enough context, enforce the instruction:
+
+```sh
+printf '%s' "<repair prompt>" | <skill-dir>/scripts/dispatch-claude.sh \
+  --workdir <feature-checkout> --model sonnet --effort medium \
+  --resume <session-id> --require-first-tool Edit
+```
+
+Use the read-only wrapper for independent review:
+
+```sh
+printf '%s' "<review prompt>" | <skill-dir>/scripts/review-claude.sh \
+  --workdir <feature-checkout> --model haiku --effort medium
+```
+
+Its defaults cover repository reads, `git diff`, `git status`, `bun test`,
+`bun run lint`, and `bun run typecheck`. Pass `--allowed-tools` only when the
+prompt names a different exact read-only check. The wrapper emits concise
+events and reports observed models, cost, session, and turns. A model mismatch
+stops the run; use `--allow-model-switch` only when the routing decision
+explicitly accepts the cost and capability change.
+
 Use raw Claude commands only when the wrapper cannot express the required
 permissions. Keep `--output-format json` for short read-only probes where
 buffered output is acceptable; use `stream-json --verbose` for supervised
@@ -134,22 +168,23 @@ it may exit immediately.
 When buffered output is used, silence alone is not evidence of a stall:
 inspect the process and worktree with read-only checks, and allow a normal
 implementation window while either is progressing. With `stream-json`, watch
-tool use rather than prose: expected targeted reads are progress; repeated
-searches, repeated denied commands, or plan-only reasoning after the prompt's
-exploration budget are not. If a run is interrupted after acquiring
-substantial context, prefer one focused `--resume <session-id>` repair over a
-cold restart. Record the cost of every invocation, including interrupted and
-resumed runs.
+tool use rather than prose. The implementation wrapper terminates the sixth
+exploration tool call before an edit; do not manually babysit a process past
+that boundary. Repeated denied commands and plan-only reasoning are also
+failures. If a run is interrupted after acquiring substantial context, prefer
+one focused `--resume <session-id>` repair over a cold restart. Record the cost
+of every invocation, including interrupted and resumed runs.
 
 Use wrapper `--resume <session-id>` when the result event exposed the ID, or
 `--continue` only when the most recent Claude session in that checkout is
 unambiguous. Continuation permits the existing executor-owned diff but still
 fails if the repair makes no further worktree change or creates a commit.
 
-Keep allowed Bash commands compatible with the permission patterns. Ask the
-executor to run checks directly unless redirects, command separators, or temp
-log inspection were explicitly allowed; otherwise Claude may spend turns
-retrying commands that the permission policy will deny.
+Keep allowed Bash commands compatible with the permission patterns. Name the
+direct permitted form in the prompt (for example `bun run typecheck`, not
+`npx tsc --noEmit` or a chained equivalent). Do not use redirects, command
+separators, `npx`, `bunx`, or temp-log inspection unless that exact operation
+was allowed; otherwise Claude may spend turns retrying denied commands.
 
 ### Gemini CLI
 
@@ -243,20 +278,25 @@ Judge progress by observable actions, not wall time alone:
 
 1. During the prompt's exploration budget, accept reads of the named docs,
    focused code anchors, and targeted searches.
-2. After that budget, require either a scoped edit or `BLOCKED: <exact missing
+2. Let the implementation wrapper stop a sixth `Read`/`Glob`/`Grep` call made
+   before `Edit` or `Write`; exit 44 is a failed round.
+3. After that budget, accept only a scoped edit or `BLOCKED: <exact missing
    decision/input>`.
-3. Count repeated searches, repeated permission denials, a plan returned as
+4. Count repeated permission denials, a model-policy stop, a plan returned as
    implementation, or a successful exit with no diff as a failed round.
-4. Resume once with the concrete failure evidence and a narrower instruction.
-   Do not say only “continue.”
-5. Escalate according to the capability ladder after the allowed failed
+5. Resume once with the concrete failure evidence and a narrower instruction.
+   Do not say only “continue.” If no discovery remains, pass
+   `--require-first-tool Edit`.
+6. Escalate according to the capability ladder after the allowed failed
    rounds; do not keep paying the same executor to rediscover context.
 
 A provider connection with no stream events, no process activity, and no
 worktree change may be stalled. Require combined evidence; any one signal alone
 is insufficient.
 
-## Delegation prompt template
+## Delegation prompt templates
+
+### Implementation
 
 ```
 Read <project docs, e.g. CLAUDE.md and the spec> first.
@@ -280,10 +320,10 @@ Acceptance matrix:
 - Side-effect invariants: <what must not happen on failure>
 Runnable checks: <commands + expected outcomes>
 
-This is implementation, not planning. Read only the named docs and code
-anchors, then use at most 5 targeted searches before the first edit. After that
-either edit or return `BLOCKED: <exact missing decision/input>`. Do not resolve
-source conflicts or product decisions yourself. Do not commit.
+This is implementation, not planning. Use at most 5 total Read, Glob, or Grep
+tool calls before the first Edit or Write. After that either edit or return
+`BLOCKED: <exact missing decision/input>`. Do not resolve source conflicts or
+product decisions yourself. Do not commit.
 
 Completion requires: a non-empty scoped diff, no unrelated files,
 `git diff --check`, focused tests, every required full check, and exact command
@@ -291,4 +331,25 @@ results. A plan, report, or successful process exit without a diff is failure.
 
 Report back: files changed, checks with results, open questions or `BLOCKED`
 reason, provider/model, and any known usage or spend.
+```
+
+### Independent review
+
+```
+Read <project docs and the complete feature diff> first.
+
+Mode: REVIEW
+Source precedence:
+1. This supervisor prompt
+2. Embedded acceptance criteria
+3. Repository instructions
+4. Existing implementation patterns
+
+Goal: Find correctness defects, regressions, missing tests, and out-of-scope changes.
+Acceptance matrix: <happy path, negative cases, side-effect invariants>
+Runnable checks: <only direct commands present in --allowed-tools>
+
+Do not edit, commit, chain commands, or substitute unlisted check tools.
+Report back: findings ordered by severity with file/line evidence, then exact
+check results. Say `No findings` explicitly when appropriate.
 ```

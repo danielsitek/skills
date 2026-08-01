@@ -123,6 +123,13 @@ current authoritative issue text when tracker access is unavailable, verify
 that every required check is permitted, and identify product decisions the
 supervisor must settle first.
 
+For Claude Code implementation, use the bundled dispatch wrapper. Its default
+policy stops the process after five `Read`/`Glob`/`Grep` calls without an edit
+and rejects a runtime model switch. Treat either stop as a failed round, not as
+a prompt to keep the same process running. When a repair instruction says no
+further exploration is needed, enforce `Edit` as the first tool call; do not
+rely on prose alone.
+
 Done when: every dispatched feature has a consistent execution contract, all
 seven task parts, and an isolated workspace when required.
 
@@ -132,10 +139,18 @@ Never accept unreviewed work. For each returned feature: inspect the diff, run
 the acceptance checks (build, tests, runtime verification where relevant).
 Executors may propose product decisions; the supervisor decides.
 
-On a failed check, return the feature to the same executor with the failure
-output. After two failed rounds at one level, escalate one level up the
-ladder; the supervisor is the top of the ladder and takes the feature over.
-Re-review the complete feature diff after repairs, not only the changed fix.
+Use the bundled read-only review wrapper for Claude Code reviews. It filters
+the stream, permits only declared checks, reports cost and actual models, and
+fails if execution switches away from the initialized model. Override its
+tool list only with the exact additional read-only checks named in the review
+prompt. Never use a raw verbose stream when the wrapper can express the task.
+
+On a failed check or dispatch-policy stop, return the feature to the same
+executor once with the concrete failure output and a narrower repair prompt.
+If no more discovery is needed, require its first tool to be `Edit`. After two
+failed rounds at one level, escalate one level up the ladder; the supervisor
+is the top of the ladder and takes the feature over. Re-review the complete
+feature diff after repairs, not only the changed fix.
 
 Done when: acceptance checks pass and the diff contains nothing outside the
 feature.
