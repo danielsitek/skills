@@ -1,0 +1,4 @@
+interface:
+  display_name: "CLI Design"
+  short_description: "Design reliable CLI contracts for humans and agents"
+  default_prompt: "Use $cli-design to design or review this CLI interaction contract."
