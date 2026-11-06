@@ -7,6 +7,7 @@ an executor once a feature is routed.
 
 - [Provider inventory and budget](#provider-inventory-and-budget)
 - [Capability ladder](#capability-ladder)
+- [Codex subagents](#codex-subagents)
 - [Claude Code subagents](#claude-code-subagents)
 - [CLI executors](#cli-executors)
 - [Progress and stop gates](#progress-and-stop-gates)
@@ -45,12 +46,13 @@ Treat another Codex CLI logged into the same ChatGPT/OpenAI account as the
 same quota pool unless evidence says otherwise. It isolates execution context,
 but does not reliably save that provider's allowance.
 
-Prefer providers in this order only after capability is satisfied:
+Choose inline execution before paying delegation overhead. When delegation has
+been justified, prefer providers in this order only after capability is satisfied:
 
 1. capable local model;
 2. capable executor on a provider with healthier or cheaper quota;
 3. supervisor's provider as a subagent or CLI;
-4. supervisor inline.
+4. supervisor takeover when delegation no longer pays.
 
 Do not spray the same authoring task across providers speculatively. One
 author is cheaper. Use different providers for independent review or
@@ -75,6 +77,14 @@ level, per SKILL.md step 5):
 Never dispatch judgment itself. A strong external model may implement a
 safety-critical design after the supervisor fixes the invariants and
 acceptance matrix.
+
+## Codex subagents
+
+Use a self-contained prompt with `fork_turns: none` and an explicitly selected
+capable model. Include only the bounded goal, relevant code/doc anchors,
+constraints, checks, and required evidence. A child sharing the same account
+also shares its allowance; fresh context reduces context cost, not quota sharing.
+Use bounded waits and request concise conclusions rather than full file/log dumps.
 
 ## Claude Code subagents
 

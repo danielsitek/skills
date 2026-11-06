@@ -1,40 +1,34 @@
 ---
 name: orchestrate
 description: >
-  Supervisor pattern for implementation work: plan and judge with the strong
-  model, break work into small end-to-end features, offload execution to the
-  cheapest capable executor (subagent or CLI agent), review everything before
-  accepting. Use when starting implementation work expected to span multiple
-  files or steps, when building a backlog from a spec or PRD, when deciding
-  which model or agent should handle a piece of work, or when the user
-  mentions delegating, orchestration, subagents, or token cost.
+  Decide whether delegation pays and coordinate bounded implementation or review
+  with concise context and appropriate models. Use for explicit delegation,
+  orchestration, executor/model routing, or reducing agent coordination cost.
+  Ordinary multi-file implementation alone does not require this skill.
 ---
 
 # Orchestrate
 
-You are the **supervisor** — the strongest model in the room. The supervisor
-never does cheap work and never delegates expensive judgment. Reasoning stays
-up, token spend goes down; every step below serves that split. Executors may
-run through another provider's CLI or a local model so one provider's quota
-does not become the project's bottleneck.
+Use one implementer by default, including ordinary multi-file features.
+Delegate only when bounded independent work or a focused review is likely to
+save more than startup, context, and coordination cost. Keep final acceptance
+with the supervising agent. A second provider is an option when useful, not a
+prerequisite or a reason to repeat investigation.
 
 ## 1. Assess
 
-Decide whether delegation pays. Delegation has a fixed cost: an **executor**
-starts cold and must re-derive context you already hold.
+Choose inline execution or a specific delegation boundary. File count alone
+is not a delegation criterion. If working inline, follow the project's normal
+workflow and skip the delegation steps below.
 
-Do it yourself when the work is one file, one behavior, or mostly judgment
-(naming, API shape, UI taste). Delegate when it is multi-file, mechanical,
-or parallelizable.
-
-For a cross-module task in an unfamiliar codebase, run one cheap read-only
-reconnaissance pass first. Require only code anchors, relevant conventions,
+If delegating across unfamiliar modules, consider bounded read-only reconnaissance
+when it avoids repeated discovery. Require only code anchors, relevant conventions,
 and likely checks; feed that concise map to the implementation executor so it
 does not repeat broad discovery. Skip this pass when the supervisor already
 has those anchors.
 
-When cost or usage limits matter, inventory the available providers before
-routing. Record authentication, known remaining quota or spend cap, agentic
+Before an external dispatch motivated by cost or limits, inspect only relevant
+providers. Record authentication, known remaining quota or spend cap, agentic
 write capability, and whether a CLI shares the supervisor's quota. Treat quota
 as unknown unless a tool or the user establishes it; never invent precision.
 
@@ -110,6 +104,10 @@ Use an explicit git worktree for concurrent writers, broad-permission agents,
 experimental/local models, or whenever the supervisor must keep using the
 primary checkout.
 
+Start subagents with fresh context (`fork_turns: none` where supported); choose
+the smallest capable model explicitly. Keep issue text to relevant acceptance
+criteria and link the required project docs instead of inheriting chat history.
+
 The delegation prompt is self-contained — the executor knows nothing you
 don't tell it. It carries seven parts: goal, files, constraints, out-of-scope,
 acceptance matrix, runnable checks, and which project docs to read first.
@@ -135,8 +133,11 @@ seven task parts, and an isolated workspace when required.
 
 ## 5. Review
 
-Never accept unreviewed work. For each returned feature: inspect the diff, run
-the acceptance checks (build, tests, runtime verification where relevant).
+For each returned feature, inspect the diff and its verification evidence.
+Reuse accepted checks for unchanged code; run missing or affected checks,
+starting with deterministic behavior, then targeted UI, then required integration.
+Read summaries and failure excerpts before full logs. Repeat a failed command
+only after a fix or an identified transient cause.
 Executors may propose product decisions; the supervisor decides.
 
 Use the bundled read-only review wrapper for Claude Code reviews. It filters
@@ -155,11 +156,11 @@ feature diff after repairs, not only the changed fix.
 Done when: acceptance checks pass and the diff contains nothing outside the
 feature.
 
-## 6. Report and pause
+## 6. Commit and report
 
 After each reviewed feature, commit — atomic, short imperative message, no
-unrelated files. After 2–3 features, or after any risky or user-facing
-change, stop and report: changed, verified, remaining risk, provider used,
+unrelated files. At meaningful milestones, report progress and continue authorized
+work unless a user decision is required: changed, verified, remaining risk, provider used,
 known quota/spend impact, next feature.
 
 ## Self-Review
