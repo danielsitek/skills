@@ -34,17 +34,29 @@ glab mr create \
 Completion criterion: glab prints an MR URL in stdout — e.g.
 `https://gitlab.com/org/repo/-/merge_requests/42`.
 
+Run `glab mr create` as its own command, never chained after `git push ... | tail`
+or piped through `tail`/`head` itself — that hides both the URL and any error, so a
+failed create looks like success. Pass `--source-branch <branch>` explicitly. If the
+URL didn't print, check before retrying (a blind retry can open a duplicate):
+
+```bash
+glab mr list --source-branch <branch> -F json --jq '.[].web_url'
+```
+
 ### Useful optional flags
 
-| Flag | Effect |
-|---|---|
-| `--draft` | Open as draft / WIP |
-| `--label "bugfix,backend"` | Attach labels |
-| `--assignee username` | Assign to a user |
-| `--reviewer username` | Request review |
-| `--remove-source-branch` | Delete branch on merge |
-| `--milestone "Sprint 10"` | Attach milestone |
-| `--push` | Push current commits before creating MR |
+| Flag                       | Effect                                  |
+| -------------------------- | --------------------------------------- |
+| `--draft`                  | Open as draft / WIP                     |
+| `--label "bugfix,backend"` | Attach labels                           |
+| `--assignee username`      | Assign to a user                        |
+| `--reviewer username`      | Request review                          |
+| `--remove-source-branch`   | Delete branch on merge                  |
+| `--milestone "Sprint 10"`  | Attach milestone                        |
+| `--push`                   | Push current commits before creating MR |
+
+`mr create` has **no `--squash` flag** (`unknown flag: --squash`) — squash is
+decided at merge time: `glab mr merge <id> --squash[=false]`.
 
 ### `--fill` mode (auto-title from commits)
 
@@ -86,7 +98,8 @@ glab mr merge 42 --remove-source-branch --yes
 ```
 
 > **Note:** When a pipeline is running, `--auto-merge` is `true` by default —
-> glab waits for checks to pass before merging. Pass `--auto-merge=false` to
+> glab enables GitLab's auto-merge (GitLab merges once checks pass) and
+> **returns immediately**; it does not wait. Pass `--auto-merge=false` to
 > merge immediately regardless of pipeline state.
 
 > **Race condition:** a just-created pipeline can lag in GitLab's bookkeeping,
@@ -94,27 +107,46 @@ glab mr merge 42 --remove-source-branch --yes
 > merge immediately without waiting. Before merging, confirm the pipeline is
 > actually registered: `glab ci list -F json --jq '.[0].status'`.
 
-> **Waiting for a pipeline before merge? Don't poll.** Never `sleep` + poll
-> `ci status` — foreground `sleep` is blocked in agent harnesses, and it is
-> redundant: `glab mr merge <id> --yes` *is* the wait. With auto-merge it
-> blocks until the pipeline passes, then merges — and merges nothing if the
-> pipeline fails. So "create → wait for pipeline → approve → merge" collapses to:
+> **Merging while a pipeline runs: enable auto-merge, don't wait for it.**
+> `glab mr merge <id> --yes` on a running pipeline prints
+> `✓ Auto-merge enabled` and exits at once — GitLab merges later when the
+> pipeline passes, and merges nothing if it fails. So "create → approve →
+> merge" is just:
 >
 > ```bash
 > glab mr approve 42
 > glab mr merge 42 --yes --remove-source-branch
 > ```
+>
+> Never `sleep` + poll in the foreground (blocked in agent harnesses). If a
+> follow-up step needs the merge to have happened (branch cleanup, ticket
+> move), wait for it with a **background** shell loop that exits on a final
+> state, and act when it completes:
+>
+> ```bash
+> # run in background; exits on merged/closed or a failed/canceled pipeline
+> for i in $(seq 1 90); do
+>   s=$(glab mr view 42 -F json --jq '.state + " " + (.head_pipeline.status // "none")')
+>   case "$s" in merged*|closed*) echo "$s"; exit 0;; *failed*|*canceled*) echo "$s"; exit 1;; esac
+>   sleep 20
+> done; echo "timeout: $s"
+> ```
+
+> **Self-approval fails with 401:** `glab mr approve <id>` on your own MR
+> returns `401 Unauthorized` — GitLab blocks authors from approving their own
+> MRs. If you're the author, skip `approve` and merge directly:
+> `glab mr merge <id> --yes`.
 
 > **Note:** `--squash` has **no local default** — unlike `--auto-merge`, glab
 > only sends a squash value when you pass the flag. Omitting it hands the
 > decision to the GitLab project's "Squash commits when merging" setting, so
 > be explicit when the outcome matters:
 >
-> | Flag | Result |
-> |---|---|
-> | *(omitted)* | GitLab project setting decides |
-> | `--squash` | force squash |
-> | `--squash=false` | force no-squash |
+> | Flag             | Result                         |
+> | ---------------- | ------------------------------ |
+> | _(omitted)_      | GitLab project setting decides |
+> | `--squash`       | force squash                   |
+> | `--squash=false` | force no-squash                |
 
 ---
 
@@ -123,6 +155,9 @@ glab mr merge 42 --remove-source-branch --yes
 ```bash
 # List open MRs
 glab mr list
+
+# List merged MRs (there is no --state flag)
+glab mr list --merged -F json
 
 # View an MR (current branch or by ID)
 glab mr view
@@ -180,6 +215,19 @@ glab ci lint
 
 > **`glab api` has no `--jq` flag** (unlike `mr view`/`ci status`/`ci list`) —
 > pipe its output to `jq` instead: `glab api projects/:id/pipelines/:id | jq -r '.status'`.
+
+> **Deploy job fails with `Deploy locked by ci`** (Deployer): another
+> pipeline's deploy to the same environment is still running — typical when
+> two MRs merge into `main` minutes apart. Find it
+> (`glab api "projects/:id/pipelines/<id>/jobs" | jq -r '.[] | select(.name=="deploy:stage") | .status'`
+> for the neighbouring pipelines), wait in a background loop until it
+> finishes, then retry the failed job by id:
+> `glab api -X POST "projects/:id/jobs/<job-id>/retry"`. The lock releases
+> itself when that deploy ends — `deploy:unlock` is only for a lock left by a
+> crashed run with no deploy in progress, and needs the user's go-ahead.
+>
+> **Manual jobs** (e.g. `deploy:prod`) are started by id once the job shows
+> `manual`: `glab api -X POST "projects/:id/jobs/<job-id>/play"`.
 
 ---
 
@@ -242,11 +290,11 @@ If a command still stalls, it means a required value was missing — read the
 error/prompt text, re-run with the corresponding flag added. The common
 culprits and the flag that removes each prompt:
 
-| Prompt you see | Missing flag to add |
-|---|---|
-| `Target branch [main]:` | `--target-branch main` |
-| `Title:` | `--title "..."` |
-| `Description (optional):` | `--description "..."` |
+| Prompt you see             | Missing flag to add                      |
+| -------------------------- | ---------------------------------------- |
+| `Target branch [main]:`    | `--target-branch main`                   |
+| `Title:`                   | `--title "..."`                          |
+| `Description (optional):`  | `--description "..."`                    |
 | editor opens (`vi`/`nano`) | `--no-editor` (and pass `--description`) |
 
 **Last resort — answering a live prompt.** Only if prevention is somehow
